@@ -12,7 +12,7 @@ Version: 1.0.0
 Author URI: https://srinathdevinfo.github.io/
 License: GPLv2 or later
 Text Domain: apiuser
-*/
+ */
 
 /*
 This program is free software; you can redistribute it and/or
@@ -30,38 +30,66 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 Copyright 2005-2015 Automattic, Inc.
-*/
+ */
 
 // Exit if accessed directly.
 defined('ABSPATH') or die();
 
-
 class ApiUser
 {
-    function activate()
-    {
-    }
-    
 
-    function deactivate()
+    public function __construct()
     {
+
+        add_filter('page_template', array('apiuser', 'catch_plugin_template'));
     }
 
-    function uninstall()
+    public function activate()
     {
+        //create page
+        global $user_ID;
+        $new_post = array(
+            'post_title'    => 'Display all Users from Api',
+            'post_content'  => 'Api content',
+            'post_status'   => 'publish',
+            'post_date'     => date('Y-m-d H:i:s'),
+            'post_author'   => $user_ID,
+            'post_type'     => 'page',
+            'post_category' => array(0),
+        );
+        $post_id = wp_insert_post($new_post);
+        if (!$post_id) {
+            wp_die('Error creating template page');
+        } else {
+            update_post_meta($post_id, '_wp_page_template', 'tp-file.php');
+        }
+    }
+
+    public function deactivate()
+    {
+    }
+
+    public function uninstall()
+    {
+    }
+
+    public function catch_plugin_template($template)
+    {
+        if ('tp-file.php' == basename($template)) {
+            $template = WP_PLUGIN_DIR . '/apiUser/tp-file.php';
+        }
+
+        return $template;
     }
 }
 
-
-
-
 if (class_exists('ApiUser')) {
-    $ApiUser=new ApiUser();
+    $ApiUser = new ApiUser();
 }
 
 //activation
-register_activation_hook(__FILE__, array($ApiUser,'activate'));
+register_activation_hook(__FILE__, array($ApiUser, 'activate'));
 
 //deactivation
-register_deactivation_hook(__FILE__, array($ApiUser,'activate'));
+register_deactivation_hook(__FILE__, array($ApiUser, 'activate'));
 //uninstall
