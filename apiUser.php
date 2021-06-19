@@ -41,7 +41,11 @@ class ApiUser
     public function __construct()
     {
 
-        add_filter('page_template', array('apiuser', 'catch_plugin_template'));
+      
+        add_action('wp_footer', array($this, 'enqueueAssets'));
+
+         add_filter('theme_page_templates', array($this, 'apiuser_add_page_template'));
+        add_filter('page_template', array($this,  'apiuser_redirect_page_template'));
     }
 
     public function activate()
@@ -58,10 +62,8 @@ class ApiUser
             'post_category' => array(0),
         );
         $post_id = wp_insert_post($new_post);
-        if (!$post_id) {
-            wp_die('Error creating template page');
-        } else {
-            update_post_meta($post_id, '_wp_page_template', 'tp-file.php');
+        if ($post_id) {
+           // update_post_meta($post_id, '_wp_page_template', 'tp-file.php');
         }
     }
 
@@ -73,13 +75,32 @@ class ApiUser
     {
     }
 
-    public function catch_plugin_template($template)
+    
+
+    function apiuser_add_page_template($templates)
     {
-        if ('tp-file.php' == basename($template)) {
+        $templates['tp-file.php'] = 'ApiUsers';
+        return $templates;
+    }
+   
+
+
+    function apiuser_redirect_page_template($template)
+    {
+        if ('my-custom-template.php' == basename($template)) {
             $template = WP_PLUGIN_DIR . '/apiUser/tp-file.php';
         }
-
         return $template;
+    }
+
+  
+
+    public function enqueueAssets()
+    {
+        wp_register_script('apiuser', plugins_url('/assets/js/jquery.dataTables.min.js', __FILE__), array('jquery'), '', true);
+        wp_enqueue_script('apiuser');
+        wp_register_style('apiuser', plugins_url('/assets/css/jquery.dataTables.min.css', __FILE__));
+        wp_enqueue_style('apiuser');
     }
 }
 
@@ -91,5 +112,5 @@ if (class_exists('ApiUser')) {
 register_activation_hook(__FILE__, array($ApiUser, 'activate'));
 
 //deactivation
-register_deactivation_hook(__FILE__, array($ApiUser, 'activate'));
+register_deactivation_hook(__FILE__, array($ApiUser, 'deactivate'));
 //uninstall
